@@ -1,6 +1,6 @@
 python-dotenv==1.0.0
 pony==0.7.17
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
 attrs==23.1.0
 flask==3
 requests_oauthlib==1.3
