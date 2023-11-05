@@ -2,6 +2,7 @@ from flask import Blueprint, request, session, redirect
 from requests_oauthlib import OAuth2Session
 from app.common import OAUTH_CONFIG
 from app.api.osu import get_osu_user_info
+from app.db.orm import Top10DB
 
 osu_oauth_blueprint = Blueprint("auth", __name__)
 
@@ -35,7 +36,13 @@ def callback():
 	session["oauth_token"] = token
 
 	user_info = get_osu_user_info(session["oauth_token"])
-	session["username"] = user_info["username"]
+	user_id = user_info["id"]
+	username = user_info["username"]
+
+	Top10DB.add_user(user_id)
+
+	session["user_id"] = user_id
+	session["username"] = username
 	return redirect("/")
 
 @osu_oauth_blueprint.route("/logout")
