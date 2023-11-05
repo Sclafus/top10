@@ -35,7 +35,7 @@ def callback():
 	)
 	session["oauth_token"] = token
 
-	user_info = get_osu_user_info(session["oauth_token"])
+	user_info = get_osu_user_info()
 	user_id = user_info["id"]
 	username = user_info["username"]
 
