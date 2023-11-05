@@ -41,6 +41,8 @@ class Top10DB:
 		with db_session:
 			user_is_in_db: User = User.exists(user_id=user_id)
 			if user_is_in_db:
+				user = User.get(user_id=user_id)
+				user.last_login = datetime.utcnow()
 				return
 
 			user_info = get_osu_user_info()
