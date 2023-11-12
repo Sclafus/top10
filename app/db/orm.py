@@ -9,13 +9,14 @@ db = Database()
 
 class User(db.Entity):
 	id = PrimaryKey(int, auto=True)
-	user_id = Required(int, size=24, unique=True, unsigned=True)
+	user_id = Required(int, size=32, unique=True, unsigned=True)
 	country_code = Required(str, 2)
+	is_votable = Required(bool)
 	first_login = Optional(datetime)
-	last_login = Optional(datetime, default=lambda: datetime.utcnow())
+	last_login = Optional(datetime)
+	scores = Set('Score')
 	votes = Set('Vote', reverse='user')
 	voted_by = Set('Vote', reverse='voted_user')
-
 
 class Vote(db.Entity):
 	id = PrimaryKey(int, auto=True)
@@ -23,6 +24,12 @@ class Vote(db.Entity):
 	weight = Required(int, size=8, unsigned=True)
 	user = Required(User, reverse='votes')
 	voted_user = Required(User, reverse='voted_by')
+
+class Score(db.Entity):
+	id = PrimaryKey(int, auto=True)
+	link = Optional(str)
+	user = Required(User)
+	comment = Optional(LongStr)
 
 
 def init(config: DBConfig) -> Database:
