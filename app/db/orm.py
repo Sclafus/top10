@@ -1,10 +1,9 @@
 from datetime import datetime
-from pony.orm import Database, Optional, PrimaryKey, Set, Required, db_session
+from pony.orm import Database, Optional, PrimaryKey, Set, Required, db_session, LongStr
 from app.config.db import DBConfig
-from app.api.osu import get_osu_user_info
+from app.api.osu import get_logged_in_user_info
 
 db = Database()
-
 
 
 class User(db.Entity):
@@ -45,25 +44,51 @@ def init(config: DBConfig) -> Database:
 
 class Top10DB:
 	@staticmethod
-	def add_user(user_id: int):
+	def add_current_user(user_id: int):
 		with db_session:
-			user_is_in_db: User = User.exists(user_id=user_id)
-			if user_is_in_db:
+			user_already_in_db: bool = User.exists(user_id=user_id)
+
+			if user_already_in_db:
 				user = User.get(user_id=user_id)
 				user.last_login = datetime.utcnow()
+				if user.first_login is None:
+					user.first_login = user.last_login
+
+				user_info = get_logged_in_user_info()
+				country_rank = user_info['statistics']['country_rank']
+				user.is_votable = country_rank <= 200
 				return
 
-			user_info = get_osu_user_info()
+			user_info = get_logged_in_user_info()
 			country_code = user_info["country"]["code"]
+			timestamp = datetime.utcnow()
 			User(
 				user_id=user_id,
 				country_code=country_code,
-				first_login=datetime.utcnow()
+				first_login=timestamp,
+				last_login=timestamp,
+				votable=None
 			)
 
 	@staticmethod
-	def cast_vote(user_id: int, voted_user_id: int):
+	def cast_vote(user_id: int, voted_user_id: int, weight: int):
 		with db_session:
 			user = User.get(user_id=user_id)
 			voted_user = User.get(user_id=voted_user_id)
-			Vote(user=user, voted_user=voted_user)
+			Vote(user=user, voted_user=voted_user, weight=weight)
+
+	@staticmethod
+	def add_votable_users_bulk(user_infos: list[dict]):
+		with db_session:
+			for user_info in user_infos:
+				user_already_in_db: bool = User.exists(user_id=user_info["id"])
+				if user_already_in_db:
+					user = User.get(user_id=user_info["id"])
+					user.is_votable = True
+					continue
+
+				User(
+					user_id=user_info["id"],
+					country_code=user_info["country"]["code"],
+					is_votable=True
+				)
