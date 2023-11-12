@@ -20,6 +20,7 @@ class User(db.Entity):
 class Vote(db.Entity):
 	id = PrimaryKey(int, auto=True)
 	timestamp = Required(datetime, default=lambda: datetime.utcnow())
+	weight = Required(int, size=8, unsigned=True)
 	user = Required(User, reverse='votes')
 	voted_user = Required(User, reverse='voted_by')
 
